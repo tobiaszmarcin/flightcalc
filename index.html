@@ -24,9 +24,16 @@
                 </div>
                 <p class="text-slate-400 text-sm mt-1">Air Ambulance & Medical Escort Quotation Tool</p>
             </div>
-            <div class="mt-4 md:mt-0 bg-blue-950/50 border border-blue-800/50 px-4 py-2 rounded-xl text-right">
-                <span class="text-xs text-blue-400 font-semibold block">OPERATIONAL MODE</span>
-                <span class="text-sm text-slate-200 font-medium">Instant Phone Quote</span>
+            <div class="mt-4 md:mt-0 flex items-center space-x-3">
+                <!-- CURRENCY TOGGLE -->
+                <div class="bg-slate-900 p-1.5 rounded-xl border border-slate-700 flex items-center space-x-1">
+                    <button id="curr-eur" onclick="setCurrency('EUR')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-blue-600 text-white">EUR (€)</button>
+                    <button id="curr-usd" onclick="setCurrency('USD')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">USD ($)</button>
+                </div>
+                <div class="bg-blue-950/50 border border-blue-800/50 px-4 py-2 rounded-xl text-right">
+                    <span class="text-xs text-blue-400 font-semibold block">OPERATIONAL MODE</span>
+                    <span class="text-sm text-slate-200 font-medium">Instant Phone Quote</span>
+                </div>
             </div>
         </div>
 
@@ -239,7 +246,30 @@
         const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "afganistan", "kabul", "sudan", "syria", "yemen", "north korea"];
         const permitKeywords = ["russia", "rosja", "moscow", "moskwa", "belarus", "minsk"];
 
+        let currentCurrency = 'EUR';
+        const eurToUsdRate = 1.08;
         let coordsCache = {};
+
+        function setCurrency(curr) {
+            currentCurrency = curr;
+            const btnEur = document.getElementById("curr-eur");
+            const btnUsd = document.getElementById("curr-usd");
+
+            if (curr === 'EUR') {
+                btnEur.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-blue-600 text-white";
+                btnUsd.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+            } else {
+                btnUsd.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition bg-blue-600 text-white";
+                btnEur.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white";
+            }
+            calculateQuote();
+        }
+
+        function formatMoney(amountEur) {
+            const symbol = currentCurrency === 'EUR' ? '€' : '$';
+            const val = currentCurrency === 'EUR' ? amountEur : amountEur * eurToUsdRate;
+            return Math.round(val).toLocaleString() + ' ' + symbol;
+        }
 
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -420,7 +450,7 @@
 
             if (isPermitReq) flightCostBase *= 1.20;
 
-            document.getElementById("res-flight-cost").innerText = Math.round(flightCostBase).toLocaleString() + " €";
+            document.getElementById("res-flight-cost").innerText = formatMoney(flightCostBase);
 
             let gmtTotal = 0;
             if (document.getElementById("gmt1-check").checked) {
@@ -429,16 +459,16 @@
             if (document.getElementById("gmt2-check").checked) {
                 gmtTotal += parseFloat(document.getElementById("gmt2-cost").value) || 0;
             }
-            document.getElementById("res-gmt-cost").innerText = Math.round(gmtTotal).toLocaleString() + " €";
+            document.getElementById("res-gmt-cost").innerText = formatMoney(gmtTotal);
 
             const totalBaseCost = flightCostBase + gmtTotal;
-            document.getElementById("res-base-total").innerText = Math.round(totalBaseCost).toLocaleString() + " €";
+            document.getElementById("res-base-total").innerText = formatMoney(totalBaseCost);
 
             const finalPrice = totalBaseCost / (1 - (margin / 100));
             const profit = finalPrice - totalBaseCost;
 
-            document.getElementById("res-final-price").innerText = Math.round(finalPrice).toLocaleString() + " €";
-            document.getElementById("res-profit").innerText = Math.round(profit).toLocaleString() + " €";
+            document.getElementById("res-final-price").innerText = formatMoney(finalPrice);
+            document.getElementById("res-profit").innerText = formatMoney(profit);
 
             btn.innerHTML = "<span>⚡</span> CALCULATE QUOTE";
             btn.disabled = false;
@@ -453,7 +483,7 @@
             const offerText = `Medical Transport Repatriation Quote (Bed-to-Bed)\n` +
                               `Route: ${orig} -> ${dest}\n` +
                               `Service Type: ${plane}\n` +
-                              `Total Estimated Price: ${price} EUR (All-Inclusive Bed-to-Bed)\n` +
+                              `Total Estimated Price: ${price} (All-Inclusive Bed-to-Bed)\n` +
                               `Includes: Professional Medical Crew, Airline/Flight Logistics, Ground Ambulances on both ends & Clearance Coordination.`;
 
             navigator.clipboard.writeText(offerText);

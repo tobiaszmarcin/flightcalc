@@ -98,7 +98,7 @@
 
                     <!-- AUTOMATIC NOTICES -->
                     <div id="remote-notice" class="hidden bg-blue-500/20 border border-blue-500/50 p-3 rounded-xl text-blue-300 text-xs flex items-center gap-2">
-                        <span>🏝️</span> <strong>REMOTE/ISLAND REGION:</strong> Automatic +25% ferry flight surcharge applied due to operator positioning requirements.
+                        <span>🏝️</span> <strong>REMOTE/ISLAND REGION:</strong> Automatic +40% ferry flight surcharge applied due to operator positioning requirements.
                     </div>
 
                     <div id="season-notice" class="hidden bg-cyan-500/20 border border-cyan-500/50 p-3 rounded-xl text-cyan-300 text-xs flex items-center gap-2">
@@ -254,7 +254,6 @@
         const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "afganistan", "kabul", "sudan", "syria", "yemen", "north korea"];
         const permitKeywords = ["russia", "rosja", "moscow", "moskwa", "belarus", "minsk"];
         
-        // SŁOWA KLUCZOWE WYKRYWAJĄCE ODLEGAŁE REGIONY I WYSPY (AUTOMATYCZNE POZYCJONOWANIE FLOTY +25%)
         const remoteIslandKeywords = ["iceland", "islandia", "keflavik", "reykjavik", "canary", "kanaryjskie", "tenerife", "azores", "greenland", "maldives", "madeira"];
 
         const airportPresets = [
@@ -401,8 +400,8 @@
 
             // DYNAMICZNE SPRAWDZANIE ODLEGAŁOŚCI REGIONU I SEZONU
             const isRemoteLocation = hasMatch(origInput, remoteIslandKeywords) || hasMatch(destInput, remoteIslandKeywords);
-            const currentMonth = new Date().getMonth(); // 0 = Jan, 11 = Dec
-            const isWinterSeason = (currentMonth >= 10 || currentMonth <= 2) && isRemoteLocation; // Listopad - Marzec w regionach północnych
+            const currentMonth = new Date().getMonth();
+            const isWinterSeason = (currentMonth >= 10 || currentMonth <= 2) && isRemoteLocation;
 
             if (isRemoteLocation) {
                 document.getElementById("remote-notice").classList.remove("hidden");
@@ -515,10 +514,10 @@
             document.getElementById("res-plane").innerText = planeType;
             document.getElementById("res-billable").innerText = billableHours.toFixed(1) + " h";
 
-            // APLIKOWANIE AUTOMATYCZNYCH NARZUTÓW DLA REJONÓW ODLEGŁYCH I ZIMOWYCH
-            if (isRemoteLocation && serviceType === "AA") flightCostBase *= 1.25; // +25% Pozycjonowanie / Ferry
-            if (isWinterSeason && serviceType === "AA") flightCostBase = (flightCostBase * 1.10) + 2500; // +10% + 2500 EUR De-icing
-            if (isPermitReq) flightCostBase *= 1.20; // +20% Pozwolenia specjalne
+            // WPROWADZENIE NARZUTU +40% ZA ODLEGŁY REGION / FERRY FLIGHT
+            if (isRemoteLocation && serviceType === "AA") flightCostBase *= 1.40;
+            if (isWinterSeason && serviceType === "AA") flightCostBase = (flightCostBase * 1.10) + 2500;
+            if (isPermitReq) flightCostBase *= 1.20;
 
             document.getElementById("res-flight-cost").innerText = formatMoney(flightCostBase);
 

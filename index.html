@@ -21,7 +21,7 @@
                     <span class="p-2 bg-blue-600 rounded-lg text-white font-bold text-xl">MED</span>
                     <h1 class="text-2xl font-bold tracking-tight">Medical Transport Calculator</h1>
                 </div>
-                <p class="text-slate-400 text-sm mt-1">Air Ambulance & Medical Escort (Commercial Flight) Quotation Tool</p>
+                <p class="text-slate-400 text-sm mt-1">Air Ambulance & Medical Escort Quotation Tool</p>
             </div>
             <div class="mt-4 md:mt-0 bg-blue-950/50 border border-blue-800/50 px-4 py-2 rounded-xl text-right">
                 <span class="text-xs text-blue-400 font-semibold block">OPERATIONAL MODE</span>
@@ -85,10 +85,6 @@
                     </div>
 
                     <!-- NOTICES -->
-                    <div id="country-notice" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-amber-300 text-xs flex items-center gap-2">
-                        <span>⚠️</span> Country name detected. Quote calculated using capital/main national hub.
-                    </div>
-
                     <div id="nofly-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
                         <div class="font-bold text-red-400 text-sm flex items-center gap-2">
                             <span>🚫</span> NO-FLY ZONE / WAR ZONE DETECTED
@@ -101,6 +97,10 @@
                             <span>📜</span> SPECIAL PERMIT & CLEARANCE REQUIRED
                         </div>
                         <p>Flight requires diplomatic clearance and sanction compliance checks. War risk surcharge applied.</p>
+                    </div>
+
+                    <div id="error-notice" class="hidden bg-red-500/10 border border-red-500/30 p-3 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                        <span>⚠️</span> <span id="error-text">Could not locate specified location. Please check spelling.</span>
                     </div>
                 </div>
 
@@ -150,7 +150,7 @@
                 </div>
 
                 <!-- CALCULATE BUTTON -->
-                <button onclick="calculate()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-xl transition flex items-center justify-center gap-2 text-lg shadow-xl">
+                <button id="calc-btn" onclick="calculateQuote()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-xl transition flex items-center justify-center gap-2 text-lg shadow-xl">
                     <span>⚡</span> CALCULATE QUOTE
                 </button>
 
@@ -231,36 +231,8 @@
     </div>
 
     <script>
-        const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "kabul", "sudan", "syria", "yemen", "north korea"];
+        const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "afganistan", "kabul", "sudan", "syria", "yemen", "north korea"];
         const permitKeywords = ["russia", "rosja", "moscow", "moskwa", "belarus", "minsk"];
-
-        const locations = {
-            "warsaw": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
-            "warszawa": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
-            "berlin": { lat: 52.3667, lon: 13.5033, name: "Berlin (BER)" },
-            "chicago": { lat: 41.9742, lon: -87.9073, name: "Chicago (ORD)" },
-            "delhi": { lat: 28.5562, lon: 77.1000, name: "Delhi (DEL)" },
-            "paris": { lat: 49.0097, lon: 2.5479, name: "Paris (CDG)" },
-            "new york": { lat: 40.6413, lon: -73.7781, name: "New York (JFK)" },
-            "london": { lat: 51.4700, lon: -0.4543, name: "London (LHR)" },
-            "madrid": { lat: 40.4839, lon: -3.5679, name: "Madrid (MAD)" },
-            "malaga": { lat: 36.6749, lon: -4.4991, name: "Malaga (AGP)" },
-            "gdansk": { lat: 54.3776, lon: 18.4662, name: "Gdansk (GDN)" },
-            "tokyo": { lat: 35.7720, lon: 140.3929, name: "Tokyo (NRT)" },
-            "cairo": { lat: 30.1219, lon: 31.4056, name: "Cairo (CAI)" },
-            "dubai": { lat: 25.2532, lon: 55.3657, name: "Dubai (DXB)" },
-            "moscow": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)" },
-            
-            // Countries
-            "poland": { lat: 52.1657, lon: 20.9671, name: "Poland (Warsaw WAW)", isCountry: true },
-            "polska": { lat: 52.1657, lon: 20.9671, name: "Poland (Warsaw WAW)", isCountry: true },
-            "germany": { lat: 52.3667, lon: 13.5033, name: "Germany (Berlin BER)", isCountry: true },
-            "niemcy": { lat: 52.3667, lon: 13.5033, name: "Germany (Berlin BER)", isCountry: true },
-            "france": { lat: 49.0097, lon: 2.5479, name: "France (Paris CDG)", isCountry: true },
-            "spain": { lat: 40.4839, lon: -3.5679, name: "Spain (Madrid MAD)", isCountry: true },
-            "usa": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
-            "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true }
-        };
 
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -279,21 +251,43 @@
             return list.some(kw => clean.includes(kw));
         }
 
-        function calculate() {
+        // Geocoding API dla dowolnego miasta/kraju na świecie
+        async function fetchCoordinates(query) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), name: data[0].display_name };
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            return null;
+        }
+
+        async function calculateQuote() {
+            const btn = document.getElementById("calc-btn");
+            btn.innerHTML = "<span>⏳</span> CALCULATING...";
+            btn.disabled = true;
+
+            document.getElementById("error-notice").classList.add("hidden");
+
             const origInput = document.getElementById("origin").value.trim();
             const destInput = document.getElementById("destination").value.trim();
             const margin = parseInt(document.getElementById("margin-slider").value);
             const serviceType = document.querySelector('input[name="service-type"]:checked').value;
 
+            // Sprawdzanie ograniczeń lotniczych
             const isNoFly = hasMatch(origInput, noFlyKeywords) || hasMatch(destInput, noFlyKeywords);
             const isPermitReq = hasMatch(origInput, permitKeywords) || hasMatch(destInput, permitKeywords);
 
             if (isNoFly) {
                 document.getElementById("nofly-notice").classList.remove("hidden");
                 document.getElementById("permit-notice").classList.add("hidden");
-                document.getElementById("country-notice").classList.add("hidden");
                 document.getElementById("res-final-price").innerText = "NO-FLY ZONE";
                 document.getElementById("res-final-price").className = "text-2xl font-extrabold text-red-400";
+                btn.innerHTML = "<span>⚡</span> CALCULATE QUOTE";
+                btn.disabled = false;
                 return;
             } else {
                 document.getElementById("nofly-notice").classList.add("hidden");
@@ -306,16 +300,16 @@
                 document.getElementById("permit-notice").classList.add("hidden");
             }
 
-            const origKey = origInput.toLowerCase();
-            const destKey = destInput.toLowerCase();
+            // Pobieranie dokładnych geodanych
+            const loc1 = await fetchCoordinates(origInput);
+            const loc2 = await fetchCoordinates(destInput);
 
-            const loc1 = locations[origKey] || { lat: 52.1657, lon: 20.9671, name: origInput };
-            const loc2 = locations[destKey] || { lat: 52.3667, lon: 13.5033, name: destInput };
-
-            if (loc1.isCountry || loc2.isCountry) {
-                document.getElementById("country-notice").classList.remove("hidden");
-            } else {
-                document.getElementById("country-notice").classList.add("hidden");
+            if (!loc1 || !loc2) {
+                document.getElementById("error-notice").classList.remove("hidden");
+                document.getElementById("error-text").innerText = "Could not geocode one or both locations. Please verify city/country spelling.";
+                btn.innerHTML = "<span>⚡</span> CALCULATE QUOTE";
+                btn.disabled = false;
+                return;
             }
 
             const dist = getHaversineDistance(loc1.lat, loc1.lon, loc2.lat, loc2.lon);
@@ -405,6 +399,9 @@
 
             document.getElementById("res-final-price").innerText = Math.round(finalPrice).toLocaleString() + " €";
             document.getElementById("res-profit").innerText = Math.round(profit).toLocaleString() + " €";
+
+            btn.innerHTML = "<span>⚡</span> CALCULATE QUOTE";
+            btn.disabled = false;
         }
 
         function copyOffer() {
@@ -424,8 +421,6 @@
             status.classList.remove("hidden");
             setTimeout(() => status.classList.add("hidden"), 3000);
         }
-
-        calculate();
     </script>
 </body>
 </html>

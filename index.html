@@ -58,9 +58,16 @@
                         </div>
                     </div>
 
-                    <!-- COUNTRY ESTIMATION NOTICE -->
+                    <!-- NOTICES -->
                     <div id="country-notice" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-amber-300 text-xs flex items-center gap-2">
                         <span>⚠️</span> Country name detected. Quote calculated using capital/main national hub.
+                    </div>
+
+                    <div id="restricted-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
+                        <div class="font-bold text-red-400 text-sm flex items-center gap-2">
+                            <span>🚫</span> RESTRICTED / NO-FLY ZONE DETECTED
+                        </div>
+                        <p id="restricted-text">Operations in this region are restricted due to international sanctions, active war zone, or airspace closures. Direct flight automated quote disabled.</p>
                     </div>
                 </div>
 
@@ -162,7 +169,7 @@
                     </div>
 
                     <!-- FINAL OFFER -->
-                    <div class="bg-blue-900/30 border border-blue-600/40 p-4 rounded-xl space-y-2">
+                    <div id="offer-box" class="bg-blue-900/30 border border-blue-600/40 p-4 rounded-xl space-y-2">
                         <span class="text-xs text-blue-300 font-bold block">CLIENT SELLING PRICE</span>
                         <div id="res-final-price" class="text-3xl font-extrabold text-white">0 €</div>
                         <div class="flex justify-between text-xs text-emerald-400 pt-1 border-t border-blue-800/50">
@@ -172,7 +179,7 @@
                     </div>
 
                     <!-- COPY BUTTON -->
-                    <button onclick="copyOffer()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                    <button id="copy-btn" onclick="copyOffer()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
                         <span>📋</span> Copy Client Offer
                     </button>
                     <p id="copy-status" class="text-xs text-center text-emerald-400 hidden">Offer copied to clipboard!</p>
@@ -186,6 +193,18 @@
     </div>
 
     <script>
+        // Lista stref wykluczonych / objętych zakazem lotów
+        const restrictedZones = [
+            "russia", "rosja", "moscow", "moskwa",
+            "ukraine", "ukraina", "kyiv", "kijów",
+            "belarus", "białoruś", "minsk", "mińsk",
+            "sudan", "khartoum",
+            "syria", "damascus",
+            "yemen", "jemen",
+            "iran", "tehran",
+            "north korea", "korea północna", "pyongyang"
+        ];
+
         const locations = {
             "chicago": { lat: 41.9742, lon: -87.9073, name: "Chicago (ORD)" },
             "delhi": { lat: 28.5562, lon: 77.1000, name: "Delhi (DEL)" },
@@ -198,6 +217,7 @@
             "gdansk": { lat: 54.3776, lon: 18.4662, name: "Gdansk (GDN)" },
             "tokyo": { lat: 35.7720, lon: 140.3929, name: "Tokyo (NRT)" },
             "cairo": { lat: 30.1219, lon: 31.4056, name: "Cairo (CAI)" },
+            "moscow": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)", isRestricted: true },
             
             // Countries
             "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
@@ -207,7 +227,9 @@
             "spain": { lat: 40.4839, lon: -3.5679, name: "Spain (Madrid MAD)", isCountry: true },
             "usa": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
             "united states": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
-            "germany": { lat: 50.0379, lon: 8.5622, name: "Germany (Frankfurt FRA)", isCountry: true }
+            "germany": { lat: 50.0379, lon: 8.5622, name: "Germany (Frankfurt FRA)", isCountry: true },
+            "russia": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true, isRestricted: true },
+            "rosja": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true, isRestricted: true }
         };
 
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -226,6 +248,27 @@
             const destInput = document.getElementById("destination").value.trim().toLowerCase();
             const margin = parseInt(document.getElementById("margin-slider").value);
             document.getElementById("margin-val").innerText = margin + "%";
+
+            // Sprawdzanie czy miejsce jest na liście zakazanych
+            const isOrigRestricted = restrictedZones.some(z => origInput.includes(z));
+            const isDestRestricted = restrictedZones.some(z => destInput.includes(z));
+
+            if (isOrigRestricted || isDestRestricted) {
+                document.getElementById("restricted-notice").classList.remove("hidden");
+                document.getElementById("country-notice").classList.add("hidden");
+                
+                document.getElementById("res-final-price").innerText = "NO-FLY ZONE";
+                document.getElementById("res-final-price").className = "text-2xl font-extrabold text-red-400";
+                document.getElementById("res-profit").innerText = "0 €";
+                document.getElementById("copy-btn").disabled = true;
+                document.getElementById("copy-btn").className = "w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed";
+                return;
+            } else {
+                document.getElementById("restricted-notice").classList.add("hidden");
+                document.getElementById("copy-btn").disabled = false;
+                document.getElementById("copy-btn").className = "w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
+                document.getElementById("res-final-price").className = "text-3xl font-extrabold text-white";
+            }
 
             const loc1 = locations[origInput] || { lat: 41.9742, lon: -87.9073, name: origInput, isCountry: false };
             const loc2 = locations[destInput] || { lat: 28.5562, lon: 77.1000, name: destInput, isCountry: false };

@@ -81,7 +81,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-400 mb-1">ORIGIN (City / Airport / Country)</label>
-                            <input type="text" id="origin" placeholder="e.g. Warsaw, Keflavik, Iceland" value="Warsaw"
+                            <input type="text" id="origin" placeholder="e.g. Warsaw, Keflavik, Iceland" value="Keflavik"
                                 oninput="handleAirportSearch('origin')"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
                             <div id="origin-suggestions" class="suggest-box hidden"></div>
@@ -96,7 +96,15 @@
                         </div>
                     </div>
 
-                    <!-- NOTICES -->
+                    <!-- AUTOMATIC NOTICES -->
+                    <div id="remote-notice" class="hidden bg-blue-500/20 border border-blue-500/50 p-3 rounded-xl text-blue-300 text-xs flex items-center gap-2">
+                        <span>🏝️</span> <strong>REMOTE/ISLAND REGION:</strong> Automatic +25% ferry flight surcharge applied due to operator positioning requirements.
+                    </div>
+
+                    <div id="season-notice" class="hidden bg-cyan-500/20 border border-cyan-500/50 p-3 rounded-xl text-cyan-300 text-xs flex items-center gap-2">
+                        <span>❄️</span> <strong>WINTER OPS / DE-ICING:</strong> Automatic winter seasonal surcharge (+10% + 2,500 EUR de-icing buffer) applied.
+                    </div>
+
                     <div id="nofly-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
                         <div class="font-bold text-red-400 text-sm flex items-center gap-2">
                             <span>🚫</span> NO-FLY ZONE / WAR ZONE DETECTED
@@ -245,27 +253,18 @@
     <script>
         const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "afganistan", "kabul", "sudan", "syria", "yemen", "north korea"];
         const permitKeywords = ["russia", "rosja", "moscow", "moskwa", "belarus", "minsk"];
+        
+        // SŁOWA KLUCZOWE WYKRYWAJĄCE ODLEGAŁE REGIONY I WYSPY (AUTOMATYCZNE POZYCJONOWANIE FLOTY +25%)
+        const remoteIslandKeywords = ["iceland", "islandia", "keflavik", "reykjavik", "canary", "kanaryjskie", "tenerife", "azores", "greenland", "maldives", "madeira"];
 
-        // BAZA DEDYKOWANYCH HUBÓW DLA KRAJÓW I DUŻYCH MIAST
         const airportPresets = [
-            // Islandia
             { name: "Keflavík International Airport (KEF/BIKF)", country: "Iceland", lat: 63.9850, lon: -22.6056, tags: ["iceland", "islandia", "keflavik", "reykjavik"] },
             { name: "Reykjavík Airport (RVK/BIRK) - Domestic/Medevac", country: "Iceland", lat: 64.1299, lon: -21.9406, tags: ["iceland", "islandia", "reykjavik"] },
-            { name: "Akureyri Airport (AEY/BIAR)", country: "Iceland", lat: 65.6600, lon: -18.0728, tags: ["iceland", "islandia", "akureyri"] },
-            // Polska
             { name: "Warsaw Chopin Airport (WAW/EPWA)", country: "Poland", lat: 52.1657, lon: 20.9671, tags: ["warsaw", "warszawa", "polska", "poland"] },
-            { name: "Gdańsk Lech Wałęsa Airport (GDN/EPGD)", country: "Poland", lat: 54.3776, lon: 18.4662, tags: ["gdansk", "gdańsk", "polska", "poland"] },
-            { name: "Kraków John Paul II Airport (KRK/EPKK)", country: "Poland", lat: 50.0777, lon: 19.7848, tags: ["krakow", "kraków", "polska", "poland"] },
-            // Niemcy
             { name: "Berlin Brandenburg Airport (BER/EDDB)", country: "Germany", lat: 52.3667, lon: 13.5033, tags: ["berlin", "germany", "niemcy"] },
             { name: "Frankfurt Airport (FRA/EDDF)", country: "Germany", lat: 50.0379, lon: 8.5622, tags: ["frankfurt", "germany", "niemcy"] },
-            // Hiszpania
             { name: "Adolfo Suárez Madrid–Barajas Airport (MAD/LEMD)", country: "Spain", lat: 40.4839, lon: -3.5679, tags: ["madrid", "madryt", "spain", "hiszpania"] },
-            { name: "Málaga–Costa del Sol Airport (AGP/LEMG)", country: "Spain", lat: 36.6749, lon: -4.4991, tags: ["malaga", "spain", "hiszpania"] },
-            // USA / Indie
-            { name: "John F. Kennedy International Airport (JFK/KJFK)", country: "USA", lat: 40.6413, lon: -73.7781, nameTag: "New York", tags: ["new york", "usa"] },
-            { name: "Chicago O'Hare International Airport (ORD/KORD)", country: "USA", lat: 41.9742, lon: -87.9073, tags: ["chicago", "usa"] },
-            { name: "Indira Gandhi International Airport (DEL/VIDP)", country: "India", lat: 28.5562, lon: 77.1000, tags: ["delhi", "india", "indie"] }
+            { name: "John F. Kennedy International Airport (JFK/KJFK)", country: "USA", lat: 40.6413, lon: -73.7781, tags: ["new york", "usa"] }
         ];
 
         let currentCurrency = 'EUR';
@@ -323,19 +322,12 @@
             box.innerHTML = "";
             let matches = [];
 
-            // 1. DLA SŁÓW KLUCZOWYCH Z BAZY PRESETÓW (NP. ICELAND, POLAND)
             airportPresets.forEach(ap => {
                 if (ap.tags.some(t => t.includes(query) || query.includes(t)) || ap.name.toLowerCase().includes(query)) {
-                    matches.push({
-                        name: ap.name,
-                        country: ap.country,
-                        lat: ap.lat,
-                        lon: ap.lon
-                    });
+                    matches.push({ name: ap.name, country: ap.country, lat: ap.lat, lon: ap.lon });
                 }
             });
 
-            // Renderowanie wyników z bazy
             if (matches.length > 0) {
                 matches.forEach(item => {
                     const div = document.createElement("div");
@@ -352,7 +344,6 @@
                 return;
             }
 
-            // 2. JEŚLI BRAK W BAZIE PRESETÓW - ZAPYTANIE DO API DLA DANEGO MIASTA
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' airport')}&addressdetails=1&limit=4`);
                 const data = await response.json();
@@ -407,6 +398,23 @@
             const destInput = document.getElementById("destination").value.trim();
             const margin = parseInt(document.getElementById("margin-slider").value);
             const serviceType = document.querySelector('input[name="service-type"]:checked').value;
+
+            // DYNAMICZNE SPRAWDZANIE ODLEGAŁOŚCI REGIONU I SEZONU
+            const isRemoteLocation = hasMatch(origInput, remoteIslandKeywords) || hasMatch(destInput, remoteIslandKeywords);
+            const currentMonth = new Date().getMonth(); // 0 = Jan, 11 = Dec
+            const isWinterSeason = (currentMonth >= 10 || currentMonth <= 2) && isRemoteLocation; // Listopad - Marzec w regionach północnych
+
+            if (isRemoteLocation) {
+                document.getElementById("remote-notice").classList.remove("hidden");
+            } else {
+                document.getElementById("remote-notice").classList.add("hidden");
+            }
+
+            if (isWinterSeason) {
+                document.getElementById("season-notice").classList.remove("hidden");
+            } else {
+                document.getElementById("season-notice").classList.add("hidden");
+            }
 
             const isNoFly = hasMatch(origInput, noFlyKeywords) || hasMatch(destInput, noFlyKeywords);
             const isPermitReq = hasMatch(origInput, permitKeywords) || hasMatch(destInput, permitKeywords);
@@ -507,7 +515,10 @@
             document.getElementById("res-plane").innerText = planeType;
             document.getElementById("res-billable").innerText = billableHours.toFixed(1) + " h";
 
-            if (isPermitReq) flightCostBase *= 1.20;
+            // APLIKOWANIE AUTOMATYCZNYCH NARZUTÓW DLA REJONÓW ODLEGŁYCH I ZIMOWYCH
+            if (isRemoteLocation && serviceType === "AA") flightCostBase *= 1.25; // +25% Pozycjonowanie / Ferry
+            if (isWinterSeason && serviceType === "AA") flightCostBase = (flightCostBase * 1.10) + 2500; // +10% + 2500 EUR De-icing
+            if (isPermitReq) flightCostBase *= 1.20; // +20% Pozwolenia specjalne
 
             document.getElementById("res-flight-cost").innerText = formatMoney(flightCostBase);
 

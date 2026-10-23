@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Ambulance (AA) - Instant Quote Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .card { background: #1e293b; border: 1px solid #334155; }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- HEADER -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between card p-6 rounded-2xl shadow-xl">
+            <div>
+                <div class="flex items-center space-x-3">
+                    <span class="p-2 bg-blue-600 rounded-lg text-white font-bold text-xl">AA</span>
+                    <h1 class="text-2xl font-bold tracking-tight">Air Ambulance Instant Calculator</h1>
+                </div>
+                <p class="text-slate-400 text-sm mt-1">Bed-to-Bed Medical Flight Quotation Tool</p>
+            </div>
+            <div class="mt-4 md:mt-0 bg-blue-950/50 border border-blue-800/50 px-4 py-2 rounded-xl text-right">
+                <span class="text-xs text-blue-400 font-semibold block">OPERATIONAL MODE</span>
+                <span class="text-sm text-slate-200 font-medium">Instant Phone Quote</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- INPUT FORM (2 COLS) -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- ROUTE -->
+                <div class="card p-6 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span>📍</span> Mission Route (City or Country)
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">ORIGIN</label>
+                            <input type="text" id="origin" placeholder="e.g. Chicago, USA or Paris" value="Chicago"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
+                                oninput="calculate()">
+                            <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">DESTINATION</label>
+                            <input type="text" id="destination" placeholder="e.g. Delhi, India or Spain" value="Delhi"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
+                                oninput="calculate()">
+                            <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
+                        </div>
+                    </div>
+
+                    <!-- COUNTRY ESTIMATION NOTICE -->
+                    <div id="country-notice" class="hidden bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl text-amber-300 text-xs flex items-center gap-2">
+                        <span>⚠️</span> Country name detected. Quote calculated using capital/main national hub.
+                    </div>
+                </div>
+
+                <!-- GROUND TRANSPORT (GMT) -->
+                <div class="card p-6 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span>🚑</span> Ground Medical Transport (Bed-to-Bed GMT)
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="gmt1-check" checked onchange="calculate()" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-sm font-medium">ICU Ambulance (Origin)</span>
+                            </label>
+                            <input type="number" id="gmt1-cost" value="2000" oninput="calculate()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
+                        </div>
+
+                        <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="gmt2-check" checked onchange="calculate()" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-sm font-medium">ICU Ambulance (Destination)</span>
+                            </label>
+                            <input type="number" id="gmt2-cost" value="2000" oninput="calculate()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARGIN SLIDER -->
+                <div class="card p-6 rounded-2xl shadow-lg space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span>📈</span> Profit Margin
+                        </h2>
+                        <span id="margin-val" class="text-xl font-bold text-blue-400">20%</span>
+                    </div>
+                    
+                    <input type="range" id="margin-slider" min="10" max="40" value="20" step="1" oninput="calculate()"
+                        class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>10% (Min)</span>
+                        <span>20% (Std)</span>
+                        <span>25%</span>
+                        <span>30%</span>
+                        <span>40% (Max)</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FINANCIAL SUMMARY (1 COL) -->
+            <div class="space-y-6">
+                
+                <div class="card p-6 rounded-2xl shadow-xl space-y-6 border-blue-500/30">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider">QUOTE SUMMARY</h2>
+
+                    <!-- FLIGHT SPECS -->
+                    <div class="space-y-2 text-sm border-b border-slate-800 pb-4">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Direct Distance:</span>
+                            <span id="res-dist" class="font-semibold">0 km</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Aircraft Category:</span>
+                            <span id="res-plane" class="font-semibold text-blue-400">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Flight Time:</span>
+                            <span id="res-airtime" class="font-semibold">0.0 h</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>+ Tarmac / Patient Handling:</span>
+                            <span>+1.0 h</span>
+                        </div>
+                        <div id="tech-stop-row" class="flex justify-between text-xs text-amber-400 hidden">
+                            <span id="tech-stop-label">+ Tech Stops (Refueling):</span>
+                            <span id="tech-stop-val">+1.5 h</span>
+                        </div>
+                        <div class="flex justify-between pt-2 text-base font-bold text-slate-200 border-t border-slate-800/50">
+                            <span>Total Billable Hours:</span>
+                            <span id="res-billable" class="text-blue-400">0.0 h</span>
+                        </div>
+                    </div>
+
+                    <!-- COST STRUCTURE -->
+                    <div class="space-y-2 text-sm border-b border-slate-800 pb-4">
+                        <div class="flex justify-between text-slate-400">
+                            <span>Base Flight Cost:</span>
+                            <span id="res-flight-cost">0 €</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Ground Transport (GMT):</span>
+                            <span id="res-gmt-cost">0 €</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-slate-200 pt-2 border-t border-slate-800/50">
+                            <span>TOTAL BASE COST:</span>
+                            <span id="res-base-total" class="text-amber-400">0 €</span>
+                        </div>
+                    </div>
+
+                    <!-- FINAL OFFER -->
+                    <div class="bg-blue-900/30 border border-blue-600/40 p-4 rounded-xl space-y-2">
+                        <span class="text-xs text-blue-300 font-bold block">CLIENT SELLING PRICE</span>
+                        <div id="res-final-price" class="text-3xl font-extrabold text-white">0 €</div>
+                        <div class="flex justify-between text-xs text-emerald-400 pt-1 border-t border-blue-800/50">
+                            <span>Net Profit (Margin):</span>
+                            <span id="res-profit" class="font-bold">0 €</span>
+                        </div>
+                    </div>
+
+                    <!-- COPY BUTTON -->
+                    <button onclick="copyOffer()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg">
+                        <span>📋</span> Copy Client Offer
+                    </button>
+                    <p id="copy-status" class="text-xs text-center text-emerald-400 hidden">Offer copied to clipboard!</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const locations = {
+            "chicago": { lat: 41.9742, lon: -87.9073, name: "Chicago (ORD)" },
+            "delhi": { lat: 28.5562, lon: 77.1000, name: "Delhi (DEL)" },
+            "paris": { lat: 49.0097, lon: 2.5479, name: "Paris (CDG)" },
+            "new york": { lat: 40.6413, lon: -73.7781, name: "New York (JFK)" },
+            "warsaw": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
+            "london": { lat: 51.4700, lon: -0.4543, name: "London (LHR)" },
+            "madrid": { lat: 40.4839, lon: -3.5679, name: "Madrid (MAD)" },
+            "malaga": { lat: 36.6749, lon: -4.4991, name: "Malaga (AGP)" },
+            "gdansk": { lat: 54.3776, lon: 18.4662, name: "Gdansk (GDN)" },
+            "tokyo": { lat: 35.7720, lon: 140.3929, name: "Tokyo (NRT)" },
+            "cairo": { lat: 30.1219, lon: 31.4056, name: "Cairo (CAI)" },
+            
+            // Countries
+            "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
+            "indie": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
+            "poland": { lat: 52.1657, lon: 20.9671, name: "Poland (Warsaw WAW)", isCountry: true },
+            "france": { lat: 49.0097, lon: 2.5479, name: "France (Paris CDG)", isCountry: true },
+            "spain": { lat: 40.4839, lon: -3.5679, name: "Spain (Madrid MAD)", isCountry: true },
+            "usa": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
+            "united states": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
+            "germany": { lat: 50.0379, lon: 8.5622, name: "Germany (Frankfurt FRA)", isCountry: true }
+        };
+
+        function getHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return Math.round(R * c);
+        }
+
+        function calculate() {
+            const origInput = document.getElementById("origin").value.trim().toLowerCase();
+            const destInput = document.getElementById("destination").value.trim().toLowerCase();
+            const margin = parseInt(document.getElementById("margin-slider").value);
+            document.getElementById("margin-val").innerText = margin + "%";
+
+            const loc1 = locations[origInput] || { lat: 41.9742, lon: -87.9073, name: origInput, isCountry: false };
+            const loc2 = locations[destInput] || { lat: 28.5562, lon: 77.1000, name: destInput, isCountry: false };
+
+            if (loc1.isCountry || loc2.isCountry) {
+                document.getElementById("country-notice").classList.remove("hidden");
+            } else {
+                document.getElementById("country-notice").classList.add("hidden");
+            }
+
+            const dist = getHaversineDistance(loc1.lat, loc1.lon, loc2.lat, loc2.lon);
+            document.getElementById("res-dist").innerText = dist.toLocaleString() + " km";
+
+            const airSpeed = 750;
+            let airTime = parseFloat((dist / airSpeed).toFixed(1));
+            if (airTime < 1.0) airTime = 1.0;
+            document.getElementById("res-airtime").innerText = airTime + " h";
+
+            let planeType = "";
+            let hourlyRate = 0;
+            let minFlightCost = 0;
+            let techStopsHours = 0;
+
+            if (dist <= 1500) {
+                planeType = "Turboprop / Light Jet";
+                hourlyRate = 3800;
+                minFlightCost = 8500;
+            } else if (dist <= 3500) {
+                planeType = "Mid-Size Jet";
+                hourlyRate = 5500;
+                minFlightCost = 15000;
+            } else if (dist <= 8000) {
+                planeType = "Heavy Transatlantic Jet";
+                hourlyRate = 9500;
+                minFlightCost = 60000;
+                techStopsHours = 1.5;
+            } else {
+                planeType = "Ultra Long-Range Transcontinental Jet";
+                hourlyRate = 13500;
+                minFlightCost = 125000;
+                techStopsHours = 3.0;
+            }
+
+            document.getElementById("res-plane").innerText = planeType;
+
+            let billableHours = airTime + 1.0 + techStopsHours;
+            if (techStopsHours > 0) {
+                document.getElementById("tech-stop-row").classList.remove("hidden");
+                document.getElementById("tech-stop-val").innerText = "+" + techStopsHours.toFixed(1) + " h";
+            } else {
+                document.getElementById("tech-stop-row").classList.add("hidden");
+            }
+
+            document.getElementById("res-billable").innerText = billableHours.toFixed(1) + " h";
+
+            let flightCostBase = billableHours * hourlyRate;
+            if (flightCostBase < minFlightCost) flightCostBase = minFlightCost;
+            document.getElementById("res-flight-cost").innerText = Math.round(flightCostBase).toLocaleString() + " €";
+
+            let gmtTotal = 0;
+            if (document.getElementById("gmt1-check").checked) {
+                gmtTotal += parseFloat(document.getElementById("gmt1-cost").value) || 0;
+            }
+            if (document.getElementById("gmt2-check").checked) {
+                gmtTotal += parseFloat(document.getElementById("gmt2-cost").value) || 0;
+            }
+            document.getElementById("res-gmt-cost").innerText = Math.round(gmtTotal).toLocaleString() + " €";
+
+            const totalBaseCost = flightCostBase + gmtTotal;
+            document.getElementById("res-base-total").innerText = Math.round(totalBaseCost).toLocaleString() + " €";
+
+            const finalPrice = totalBaseCost / (1 - (margin / 100));
+            const profit = finalPrice - totalBaseCost;
+
+            document.getElementById("res-final-price").innerText = Math.round(finalPrice).toLocaleString() + " €";
+            document.getElementById("res-profit").innerText = Math.round(profit).toLocaleString() + " €";
+        }
+
+        function copyOffer() {
+            const orig = document.getElementById("origin").value;
+            const dest = document.getElementById("destination").value;
+            const plane = document.getElementById("res-plane").innerText;
+            const price = document.getElementById("res-final-price").innerText;
+
+            const offerText = `Air Ambulance Medical Repatriation Quote (Bed-to-Bed)\n` +
+                              `Route: ${orig} -> ${dest}\n` +
+                              `Aircraft Category: ${plane}\n` +
+                              `Total Estimated Price: ${price} EUR (All-Inclusive Bed-to-Bed)\n` +
+                              `Includes: Dedicated Air Ambulance, Full ICU Medical Crew & Equipment, Ground Ambulances on both ends, Tarmac Handling & Flight Coordination.`;
+
+            navigator.clipboard.writeText(offerText);
+            const status = document.getElementById("copy-status");
+            status.classList.remove("hidden");
+            setTimeout(() => status.classList.add("hidden"), 3000);
+        }
+
+        calculate();
+    </script>
+</body>
+</html>

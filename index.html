@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air Ambulance (AA) - Instant Quote Calculator</title>
+    <title>Air Ambulance & Medical Escort Quote Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
@@ -18,10 +18,10 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between card p-6 rounded-2xl shadow-xl">
             <div>
                 <div class="flex items-center space-x-3">
-                    <span class="p-2 bg-blue-600 rounded-lg text-white font-bold text-xl">AA</span>
-                    <h1 class="text-2xl font-bold tracking-tight">Air Ambulance Instant Calculator</h1>
+                    <span class="p-2 bg-blue-600 rounded-lg text-white font-bold text-xl">MED</span>
+                    <h1 class="text-2xl font-bold tracking-tight">Medical Transport Calculator</h1>
                 </div>
-                <p class="text-slate-400 text-sm mt-1">Bed-to-Bed Medical Flight Quotation Tool</p>
+                <p class="text-slate-400 text-sm mt-1">Air Ambulance & Medical Escort (Commercial Flight) Quotation Tool</p>
             </div>
             <div class="mt-4 md:mt-0 bg-blue-950/50 border border-blue-800/50 px-4 py-2 rounded-xl text-right">
                 <span class="text-xs text-blue-400 font-semibold block">OPERATIONAL MODE</span>
@@ -33,6 +33,36 @@
             
             <!-- INPUT FORM (2 COLS) -->
             <div class="lg:col-span-2 space-y-6">
+
+                <!-- MISSION TYPE SELECTOR -->
+                <div class="card p-6 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span>✈️</span> Service Type
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center space-x-2 cursor-pointer hover:border-blue-500 transition">
+                            <input type="radio" name="service-type" value="AA" checked class="text-blue-600">
+                            <div class="text-xs">
+                                <span class="font-bold block text-slate-200">Air Ambulance (AA)</span>
+                                <span class="text-slate-400">Private Jet / ICU Crew</span>
+                            </div>
+                        </label>
+                        <label class="p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center space-x-2 cursor-pointer hover:border-blue-500 transition">
+                            <input type="radio" name="service-type" value="ME_B" class="text-blue-600">
+                            <div class="text-xs">
+                                <span class="font-bold block text-slate-200">Medical Escort (ME+B)</span>
+                                <span class="text-slate-400">Commercial / Business</span>
+                            </div>
+                        </label>
+                        <label class="p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center space-x-2 cursor-pointer hover:border-blue-500 transition">
+                            <input type="radio" name="service-type" value="ME_E" class="text-blue-600">
+                            <div class="text-xs">
+                                <span class="font-bold block text-slate-200">Medical Escort (ME+E)</span>
+                                <span class="text-slate-400">Commercial / Economy</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
                 
                 <!-- ROUTE -->
                 <div class="card p-6 rounded-2xl shadow-lg space-y-4">
@@ -43,18 +73,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">ORIGIN</label>
-                            <input type="text" id="origin" placeholder="e.g. Chicago, USA or Moscow" value="Chicago"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
-                                oninput="calculate()">
-                            <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
+                            <input type="text" id="origin" placeholder="e.g. Warsaw, Poland" value="Warsaw"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
                         </div>
                         
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">DESTINATION</label>
-                            <input type="text" id="destination" placeholder="e.g. Delhi, India or Iran" value="Delhi"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
-                                oninput="calculate()">
-                            <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
+                            <input type="text" id="destination" placeholder="e.g. Berlin, Germany" value="Berlin"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
                         </div>
                     </div>
 
@@ -63,20 +89,18 @@
                         <span>⚠️</span> Country name detected. Quote calculated using capital/main national hub.
                     </div>
 
-                    <!-- BAN 1: TOTAL NO FLY -->
                     <div id="nofly-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
                         <div class="font-bold text-red-400 text-sm flex items-center gap-2">
                             <span>🚫</span> NO-FLY ZONE / WAR ZONE DETECTED
                         </div>
-                        <p>Direct civilian medical flights are completely restricted in this region (active conflict or lack of ATC control). Automated quote disabled.</p>
+                        <p>Direct civilian medical flights are completely restricted in this region. Automated quote disabled.</p>
                     </div>
 
-                    <!-- BAN 2: PERMIT REQUIRED (MOSCOW ETC) -->
                     <div id="permit-notice" class="hidden bg-amber-500/20 border border-amber-500/50 p-4 rounded-xl text-amber-200 text-xs space-y-1">
                         <div class="font-bold text-amber-400 text-sm flex items-center gap-2">
                             <span>📜</span> SPECIAL PERMIT & CLEARANCE REQUIRED
                         </div>
-                        <p>Flight to/from this zone is permitted but requires diplomatic clearances, special permits, and sanction compliance checks. War risk insurance surcharge applied.</p>
+                        <p>Flight requires diplomatic clearance and sanction compliance checks. War risk surcharge applied.</p>
                     </div>
                 </div>
 
@@ -89,18 +113,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
                             <label class="flex items-center space-x-3 cursor-pointer">
-                                <input type="checkbox" id="gmt1-check" checked onchange="calculate()" class="w-4 h-4 text-blue-600 rounded">
+                                <input type="checkbox" id="gmt1-check" checked class="w-4 h-4 text-blue-600 rounded">
                                 <span class="text-sm font-medium">ICU Ambulance (Origin)</span>
                             </label>
-                            <input type="number" id="gmt1-cost" value="2000" oninput="calculate()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
+                            <input type="number" id="gmt1-cost" value="1500" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
                         </div>
 
                         <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2">
                             <label class="flex items-center space-x-3 cursor-pointer">
-                                <input type="checkbox" id="gmt2-check" checked onchange="calculate()" class="w-4 h-4 text-blue-600 rounded">
+                                <input type="checkbox" id="gmt2-check" checked class="w-4 h-4 text-blue-600 rounded">
                                 <span class="text-sm font-medium">ICU Ambulance (Destination)</span>
                             </label>
-                            <input type="number" id="gmt2-cost" value="2000" oninput="calculate()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
+                            <input type="number" id="gmt2-cost" value="1500" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-right text-slate-200">
                         </div>
                     </div>
                 </div>
@@ -114,7 +138,7 @@
                         <span id="margin-val" class="text-xl font-bold text-blue-400">20%</span>
                     </div>
                     
-                    <input type="range" id="margin-slider" min="10" max="40" value="20" step="1" oninput="calculate()"
+                    <input type="range" id="margin-slider" min="10" max="40" value="20" step="1" oninput="document.getElementById('margin-val').innerText=this.value+'%'"
                         class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                     <div class="flex justify-between text-xs text-slate-400">
                         <span>10% (Min)</span>
@@ -124,6 +148,11 @@
                         <span>40% (Max)</span>
                     </div>
                 </div>
+
+                <!-- CALCULATE BUTTON -->
+                <button onclick="calculate()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-xl transition flex items-center justify-center gap-2 text-lg shadow-xl">
+                    <span>⚡</span> CALCULATE QUOTE
+                </button>
 
             </div>
 
@@ -140,7 +169,7 @@
                             <span id="res-dist" class="font-semibold">0 km</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-400">Aircraft Category:</span>
+                            <span class="text-slate-400">Category / Class:</span>
                             <span id="res-plane" class="font-semibold text-blue-400">-</span>
                         </div>
                         <div class="flex justify-between">
@@ -148,11 +177,11 @@
                             <span id="res-airtime" class="font-semibold">0.0 h</span>
                         </div>
                         <div class="flex justify-between text-xs text-slate-500">
-                            <span>+ Tarmac / Patient Handling:</span>
-                            <span>+1.0 h</span>
+                            <span>+ Operational Buffer / Tarmac:</span>
+                            <span id="res-buffer-text">+1.0 h</span>
                         </div>
                         <div id="tech-stop-row" class="flex justify-between text-xs text-amber-400 hidden">
-                            <span id="tech-stop-label">+ Tech Stops (Refueling):</span>
+                            <span id="tech-stop-label">+ Tech Stops / Logistics:</span>
                             <span id="tech-stop-val">+1.5 h</span>
                         </div>
                         <div class="flex justify-between pt-2 text-base font-bold text-slate-200 border-t border-slate-800/50">
@@ -164,7 +193,7 @@
                     <!-- COST STRUCTURE -->
                     <div class="space-y-2 text-sm border-b border-slate-800 pb-4">
                         <div class="flex justify-between text-slate-400">
-                            <span>Base Flight Cost:</span>
+                            <span>Base Mission / Flight Cost:</span>
                             <span id="res-flight-cost">0 €</span>
                         </div>
                         <div class="flex justify-between text-slate-400">
@@ -202,47 +231,35 @@
     </div>
 
     <script>
-        // 1. BEZWZGLĘDNY ZAKAZ (NO-FLY)
-        const noFlyKeywords = [
-            "iran", "tehran", "teheran",
-            "afghanistan", "afganistan", "kabul",
-            "sudan", "khartoum",
-            "syria", "damascus", "damaszek",
-            "yemen", "jemen",
-            "north korea", "korea polnocna", "korea północna", "pyongyang"
-        ];
-
-        // 2. WYMAGANE PERMITY / DIPLOMATIC CLEARANCE (NP. ROSJA / BIAŁORUŚ)
-        const permitKeywords = [
-            "russia", "rosja", "moscow", "moskwa",
-            "belarus", "bialorus", "białoruś", "minsk", "mińsk"
-        ];
+        const noFlyKeywords = ["iran", "tehran", "teheran", "afghanistan", "kabul", "sudan", "syria", "yemen", "north korea"];
+        const permitKeywords = ["russia", "rosja", "moscow", "moskwa", "belarus", "minsk"];
 
         const locations = {
+            "warsaw": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
+            "warszawa": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
+            "berlin": { lat: 52.3667, lon: 13.5033, name: "Berlin (BER)" },
             "chicago": { lat: 41.9742, lon: -87.9073, name: "Chicago (ORD)" },
             "delhi": { lat: 28.5562, lon: 77.1000, name: "Delhi (DEL)" },
             "paris": { lat: 49.0097, lon: 2.5479, name: "Paris (CDG)" },
             "new york": { lat: 40.6413, lon: -73.7781, name: "New York (JFK)" },
-            "warsaw": { lat: 52.1657, lon: 20.9671, name: "Warsaw (WAW)" },
             "london": { lat: 51.4700, lon: -0.4543, name: "London (LHR)" },
             "madrid": { lat: 40.4839, lon: -3.5679, name: "Madrid (MAD)" },
             "malaga": { lat: 36.6749, lon: -4.4991, name: "Malaga (AGP)" },
             "gdansk": { lat: 54.3776, lon: 18.4662, name: "Gdansk (GDN)" },
             "tokyo": { lat: 35.7720, lon: 140.3929, name: "Tokyo (NRT)" },
             "cairo": { lat: 30.1219, lon: 31.4056, name: "Cairo (CAI)" },
+            "dubai": { lat: 25.2532, lon: 55.3657, name: "Dubai (DXB)" },
             "moscow": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)" },
-            "moskwa": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)" },
             
             // Countries
-            "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
-            "indie": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
             "poland": { lat: 52.1657, lon: 20.9671, name: "Poland (Warsaw WAW)", isCountry: true },
+            "polska": { lat: 52.1657, lon: 20.9671, name: "Poland (Warsaw WAW)", isCountry: true },
+            "germany": { lat: 52.3667, lon: 13.5033, name: "Germany (Berlin BER)", isCountry: true },
+            "niemcy": { lat: 52.3667, lon: 13.5033, name: "Germany (Berlin BER)", isCountry: true },
             "france": { lat: 49.0097, lon: 2.5479, name: "France (Paris CDG)", isCountry: true },
             "spain": { lat: 40.4839, lon: -3.5679, name: "Spain (Madrid MAD)", isCountry: true },
             "usa": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
-            "germany": { lat: 50.0379, lon: 8.5622, name: "Germany (Frankfurt FRA)", isCountry: true },
-            "russia": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true },
-            "rosja": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true }
+            "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true }
         };
 
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -266,32 +283,20 @@
             const origInput = document.getElementById("origin").value.trim();
             const destInput = document.getElementById("destination").value.trim();
             const margin = parseInt(document.getElementById("margin-slider").value);
-            document.getElementById("margin-val").innerText = margin + "%";
+            const serviceType = document.querySelector('input[name="service-type"]:checked').value;
 
-            // 1. Sprawdzenie NO-FLY
             const isNoFly = hasMatch(origInput, noFlyKeywords) || hasMatch(destInput, noFlyKeywords);
-            // 2. Sprawdzenie PERMIT REQUIRED
             const isPermitReq = hasMatch(origInput, permitKeywords) || hasMatch(destInput, permitKeywords);
 
             if (isNoFly) {
                 document.getElementById("nofly-notice").classList.remove("hidden");
                 document.getElementById("permit-notice").classList.add("hidden");
                 document.getElementById("country-notice").classList.add("hidden");
-                
                 document.getElementById("res-final-price").innerText = "NO-FLY ZONE";
                 document.getElementById("res-final-price").className = "text-2xl font-extrabold text-red-400";
-                document.getElementById("res-profit").innerText = "0 €";
-                document.getElementById("res-base-total").innerText = "RESTRICTED";
-                document.getElementById("res-flight-cost").innerText = "RESTRICTED";
-                document.getElementById("res-plane").innerText = "NO-FLY REGION";
-                
-                document.getElementById("copy-btn").disabled = true;
-                document.getElementById("copy-btn").className = "w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed";
                 return;
             } else {
                 document.getElementById("nofly-notice").classList.add("hidden");
-                document.getElementById("copy-btn").disabled = false;
-                document.getElementById("copy-btn").className = "w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
                 document.getElementById("res-final-price").className = "text-3xl font-extrabold text-white";
             }
 
@@ -304,10 +309,10 @@
             const origKey = origInput.toLowerCase();
             const destKey = destInput.toLowerCase();
 
-            const loc1 = locations[origKey] || { lat: 41.9742, lon: -87.9073, name: origInput, isCountry: false };
-            const loc2 = locations[destKey] || { lat: 28.5562, lon: 77.1000, name: destInput, isCountry: false };
+            const loc1 = locations[origKey] || { lat: 52.1657, lon: 20.9671, name: origInput };
+            const loc2 = locations[destKey] || { lat: 52.3667, lon: 13.5033, name: destInput };
 
-            if ((loc1.isCountry || loc2.isCountry) && !isNoFly) {
+            if (loc1.isCountry || loc2.isCountry) {
                 document.getElementById("country-notice").classList.remove("hidden");
             } else {
                 document.getElementById("country-notice").classList.add("hidden");
@@ -316,56 +321,71 @@
             const dist = getHaversineDistance(loc1.lat, loc1.lon, loc2.lat, loc2.lon);
             document.getElementById("res-dist").innerText = dist.toLocaleString() + " km";
 
-            const airSpeed = 750;
+            let airSpeed = 750;
             let airTime = parseFloat((dist / airSpeed).toFixed(1));
             if (airTime < 1.0) airTime = 1.0;
             document.getElementById("res-airtime").innerText = airTime + " h";
 
             let planeType = "";
-            let hourlyRate = 0;
-            let minFlightCost = 0;
-            let techStopsHours = 0;
+            let flightCostBase = 0;
+            let billableHours = 0;
 
-            if (dist <= 1500) {
-                planeType = "Turboprop / Light Jet";
-                hourlyRate = 3800;
-                minFlightCost = 8500;
-            } else if (dist <= 3500) {
-                planeType = "Mid-Size Jet";
-                hourlyRate = 5500;
-                minFlightCost = 15000;
-            } else if (dist <= 8000) {
-                planeType = "Heavy Transatlantic Jet";
-                hourlyRate = 9500;
-                minFlightCost = 60000;
-                techStopsHours = 1.5;
-            } else {
-                planeType = "Ultra Long-Range Transcontinental Jet";
-                hourlyRate = 13500;
-                minFlightCost = 125000;
-                techStopsHours = 3.0;
-            }
+            if (serviceType === "AA") {
+                let hourlyRate = 0;
+                let minFlightCost = 0;
+                let techStopsHours = 0;
 
-            document.getElementById("res-plane").innerText = planeType;
+                if (dist <= 1500) {
+                    planeType = "AA - Light Jet";
+                    hourlyRate = 3800;
+                    minFlightCost = 8500;
+                } else if (dist <= 3500) {
+                    planeType = "AA - Mid-Size Jet";
+                    hourlyRate = 5500;
+                    minFlightCost = 15000;
+                } else if (dist <= 8000) {
+                    planeType = "AA - Heavy Transatlantic Jet";
+                    hourlyRate = 9500;
+                    minFlightCost = 60000;
+                    techStopsHours = 1.5;
+                } else {
+                    planeType = "AA - Ultra Long-Range Jet";
+                    hourlyRate = 13500;
+                    minFlightCost = 125000;
+                    techStopsHours = 3.0;
+                }
 
-            let billableHours = airTime + 1.0 + techStopsHours;
-            if (techStopsHours > 0) {
-                document.getElementById("tech-stop-row").classList.remove("hidden");
-                document.getElementById("tech-stop-val").innerText = "+" + techStopsHours.toFixed(1) + " h";
-            } else {
+                billableHours = airTime + 1.0 + techStopsHours;
+                flightCostBase = billableHours * hourlyRate;
+                if (flightCostBase < minFlightCost) flightCostBase = minFlightCost;
+
+                if (techStopsHours > 0) {
+                    document.getElementById("tech-stop-row").classList.remove("hidden");
+                    document.getElementById("tech-stop-val").innerText = "+" + techStopsHours.toFixed(1) + " h";
+                } else {
+                    document.getElementById("tech-stop-row").classList.add("hidden");
+                }
+            } 
+            else if (serviceType === "ME_B") {
+                planeType = "Medical Escort (Business Class)";
+                const hourlyEscortRate = 1200;
+                billableHours = airTime + 3.0;
+                flightCostBase = Math.max(4500, billableHours * hourlyEscortRate);
+                document.getElementById("tech-stop-row").classList.add("hidden");
+            } 
+            else if (serviceType === "ME_E") {
+                planeType = "Medical Escort (Economy Class)";
+                const hourlyEscortRate = 750;
+                billableHours = airTime + 3.0;
+                flightCostBase = Math.max(2800, billableHours * hourlyEscortRate);
                 document.getElementById("tech-stop-row").classList.add("hidden");
             }
 
+            document.getElementById("res-plane").innerText = planeType;
             document.getElementById("res-billable").innerText = billableHours.toFixed(1) + " h";
 
-            let flightCostBase = billableHours * hourlyRate;
-            
-            // Dopłata ryzykowa za kraje wymagające specjalnych pozwoleń (np. Rosja +20%)
-            if (isPermitReq) {
-                flightCostBase *= 1.20; 
-            }
+            if (isPermitReq) flightCostBase *= 1.20;
 
-            if (flightCostBase < minFlightCost) flightCostBase = minFlightCost;
             document.getElementById("res-flight-cost").innerText = Math.round(flightCostBase).toLocaleString() + " €";
 
             let gmtTotal = 0;
@@ -393,11 +413,11 @@
             const plane = document.getElementById("res-plane").innerText;
             const price = document.getElementById("res-final-price").innerText;
 
-            const offerText = `Air Ambulance Medical Repatriation Quote (Bed-to-Bed)\n` +
+            const offerText = `Medical Transport Repatriation Quote (Bed-to-Bed)\n` +
                               `Route: ${orig} -> ${dest}\n` +
-                              `Aircraft Category: ${plane}\n` +
+                              `Service Type: ${plane}\n` +
                               `Total Estimated Price: ${price} EUR (All-Inclusive Bed-to-Bed)\n` +
-                              `Includes: Dedicated Air Ambulance, Full ICU Medical Crew & Equipment, Ground Ambulances on both ends, Tarmac Handling & Flight Coordination.`;
+                              `Includes: Professional Medical Crew, Airline/Flight Logistics, Ground Ambulances on both ends & Clearance Coordination.`;
 
             navigator.clipboard.writeText(offerText);
             const status = document.getElementById("copy-status");

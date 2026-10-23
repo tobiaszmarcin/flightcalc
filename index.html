@@ -43,7 +43,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">ORIGIN</label>
-                            <input type="text" id="origin" placeholder="e.g. Chicago, USA or Paris" value="Chicago"
+                            <input type="text" id="origin" placeholder="e.g. Chicago, USA or Moscow" value="Chicago"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
                                 oninput="calculate()">
                             <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
@@ -51,7 +51,7 @@
                         
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">DESTINATION</label>
-                            <input type="text" id="destination" placeholder="e.g. Delhi, India or Spain" value="Delhi"
+                            <input type="text" id="destination" placeholder="e.g. Delhi, India or Iran" value="Delhi"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition"
                                 oninput="calculate()">
                             <p class="text-[11px] text-slate-500 mt-1">Accepts city, airport, or country name</p>
@@ -63,11 +63,20 @@
                         <span>⚠️</span> Country name detected. Quote calculated using capital/main national hub.
                     </div>
 
-                    <div id="restricted-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
+                    <!-- BAN 1: TOTAL NO FLY -->
+                    <div id="nofly-notice" class="hidden bg-red-500/20 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs space-y-1">
                         <div class="font-bold text-red-400 text-sm flex items-center gap-2">
-                            <span>🚫</span> RESTRICTED / NO-FLY ZONE DETECTED
+                            <span>🚫</span> NO-FLY ZONE / WAR ZONE DETECTED
                         </div>
-                        <p id="restricted-text">Operations in this region are restricted due to international sanctions, active war zone, or airspace closures. Direct flight automated quote disabled.</p>
+                        <p>Direct civilian medical flights are completely restricted in this region (active conflict or lack of ATC control). Automated quote disabled.</p>
+                    </div>
+
+                    <!-- BAN 2: PERMIT REQUIRED (MOSCOW ETC) -->
+                    <div id="permit-notice" class="hidden bg-amber-500/20 border border-amber-500/50 p-4 rounded-xl text-amber-200 text-xs space-y-1">
+                        <div class="font-bold text-amber-400 text-sm flex items-center gap-2">
+                            <span>📜</span> SPECIAL PERMIT & CLEARANCE REQUIRED
+                        </div>
+                        <p>Flight to/from this zone is permitted but requires diplomatic clearances, special permits, and sanction compliance checks. War risk insurance surcharge applied.</p>
                     </div>
                 </div>
 
@@ -193,16 +202,20 @@
     </div>
 
     <script>
-        // Lista stref wykluczonych / objętych zakazem lotów
-        const restrictedZones = [
-            "russia", "rosja", "moscow", "moskwa",
-            "ukraine", "ukraina", "kyiv", "kijów",
-            "belarus", "białoruś", "minsk", "mińsk",
+        // 1. BEZWZGLĘDNY ZAKAZ (NO-FLY)
+        const noFlyKeywords = [
+            "iran", "tehran", "teheran",
+            "afghanistan", "afganistan", "kabul",
             "sudan", "khartoum",
-            "syria", "damascus",
+            "syria", "damascus", "damaszek",
             "yemen", "jemen",
-            "iran", "tehran",
-            "north korea", "korea północna", "pyongyang"
+            "north korea", "korea polnocna", "korea północna", "pyongyang"
+        ];
+
+        // 2. WYMAGANE PERMITY / DIPLOMATIC CLEARANCE (NP. ROSJA / BIAŁORUŚ)
+        const permitKeywords = [
+            "russia", "rosja", "moscow", "moskwa",
+            "belarus", "bialorus", "białoruś", "minsk", "mińsk"
         ];
 
         const locations = {
@@ -217,7 +230,8 @@
             "gdansk": { lat: 54.3776, lon: 18.4662, name: "Gdansk (GDN)" },
             "tokyo": { lat: 35.7720, lon: 140.3929, name: "Tokyo (NRT)" },
             "cairo": { lat: 30.1219, lon: 31.4056, name: "Cairo (CAI)" },
-            "moscow": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)", isRestricted: true },
+            "moscow": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)" },
+            "moskwa": { lat: 55.7558, lon: 37.6173, name: "Moscow (SVO)" },
             
             // Countries
             "india": { lat: 28.5562, lon: 77.1000, name: "India (Delhi DEL)", isCountry: true },
@@ -226,10 +240,9 @@
             "france": { lat: 49.0097, lon: 2.5479, name: "France (Paris CDG)", isCountry: true },
             "spain": { lat: 40.4839, lon: -3.5679, name: "Spain (Madrid MAD)", isCountry: true },
             "usa": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
-            "united states": { lat: 40.6413, lon: -73.7781, name: "USA (New York JFK)", isCountry: true },
             "germany": { lat: 50.0379, lon: 8.5622, name: "Germany (Frankfurt FRA)", isCountry: true },
-            "russia": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true, isRestricted: true },
-            "rosja": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true, isRestricted: true }
+            "russia": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true },
+            "rosja": { lat: 55.7558, lon: 37.6173, name: "Russia (Moscow SVO)", isCountry: true }
         };
 
         function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -243,37 +256,58 @@
             return Math.round(R * c);
         }
 
+        function hasMatch(inputVal, list) {
+            if (!inputVal) return false;
+            const clean = inputVal.toLowerCase().trim();
+            return list.some(kw => clean.includes(kw));
+        }
+
         function calculate() {
-            const origInput = document.getElementById("origin").value.trim().toLowerCase();
-            const destInput = document.getElementById("destination").value.trim().toLowerCase();
+            const origInput = document.getElementById("origin").value.trim();
+            const destInput = document.getElementById("destination").value.trim();
             const margin = parseInt(document.getElementById("margin-slider").value);
             document.getElementById("margin-val").innerText = margin + "%";
 
-            // Sprawdzanie czy miejsce jest na liście zakazanych
-            const isOrigRestricted = restrictedZones.some(z => origInput.includes(z));
-            const isDestRestricted = restrictedZones.some(z => destInput.includes(z));
+            // 1. Sprawdzenie NO-FLY
+            const isNoFly = hasMatch(origInput, noFlyKeywords) || hasMatch(destInput, noFlyKeywords);
+            // 2. Sprawdzenie PERMIT REQUIRED
+            const isPermitReq = hasMatch(origInput, permitKeywords) || hasMatch(destInput, permitKeywords);
 
-            if (isOrigRestricted || isDestRestricted) {
-                document.getElementById("restricted-notice").classList.remove("hidden");
+            if (isNoFly) {
+                document.getElementById("nofly-notice").classList.remove("hidden");
+                document.getElementById("permit-notice").classList.add("hidden");
                 document.getElementById("country-notice").classList.add("hidden");
                 
                 document.getElementById("res-final-price").innerText = "NO-FLY ZONE";
                 document.getElementById("res-final-price").className = "text-2xl font-extrabold text-red-400";
                 document.getElementById("res-profit").innerText = "0 €";
+                document.getElementById("res-base-total").innerText = "RESTRICTED";
+                document.getElementById("res-flight-cost").innerText = "RESTRICTED";
+                document.getElementById("res-plane").innerText = "NO-FLY REGION";
+                
                 document.getElementById("copy-btn").disabled = true;
                 document.getElementById("copy-btn").className = "w-full bg-slate-700 text-slate-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed";
                 return;
             } else {
-                document.getElementById("restricted-notice").classList.add("hidden");
+                document.getElementById("nofly-notice").classList.add("hidden");
                 document.getElementById("copy-btn").disabled = false;
                 document.getElementById("copy-btn").className = "w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg";
                 document.getElementById("res-final-price").className = "text-3xl font-extrabold text-white";
             }
 
-            const loc1 = locations[origInput] || { lat: 41.9742, lon: -87.9073, name: origInput, isCountry: false };
-            const loc2 = locations[destInput] || { lat: 28.5562, lon: 77.1000, name: destInput, isCountry: false };
+            if (isPermitReq) {
+                document.getElementById("permit-notice").classList.remove("hidden");
+            } else {
+                document.getElementById("permit-notice").classList.add("hidden");
+            }
 
-            if (loc1.isCountry || loc2.isCountry) {
+            const origKey = origInput.toLowerCase();
+            const destKey = destInput.toLowerCase();
+
+            const loc1 = locations[origKey] || { lat: 41.9742, lon: -87.9073, name: origInput, isCountry: false };
+            const loc2 = locations[destKey] || { lat: 28.5562, lon: 77.1000, name: destInput, isCountry: false };
+
+            if ((loc1.isCountry || loc2.isCountry) && !isNoFly) {
                 document.getElementById("country-notice").classList.remove("hidden");
             } else {
                 document.getElementById("country-notice").classList.add("hidden");
@@ -325,6 +359,12 @@
             document.getElementById("res-billable").innerText = billableHours.toFixed(1) + " h";
 
             let flightCostBase = billableHours * hourlyRate;
+            
+            // Dopłata ryzykowa za kraje wymagające specjalnych pozwoleń (np. Rosja +20%)
+            if (isPermitReq) {
+                flightCostBase *= 1.20; 
+            }
+
             if (flightCostBase < minFlightCost) flightCostBase = minFlightCost;
             document.getElementById("res-flight-cost").innerText = Math.round(flightCostBase).toLocaleString() + " €";
 

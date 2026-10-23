@@ -8,7 +8,7 @@
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
         .card { background: #1e293b; border: 1px solid #334155; }
-        .suggest-box { background: #0f172a; border: 1px solid #334155; max-height: 180px; overflow-y: auto; position: absolute; width: 100%; z-index: 50; border-radius: 0.75rem; margin-top: 0.25rem; }
+        .suggest-box { background: #0f172a; border: 1px solid #334155; max-height: 220px; overflow-y: auto; position: absolute; width: 100%; z-index: 50; border-radius: 0.75rem; margin-top: 0.25rem; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -75,13 +75,13 @@
                 <!-- ROUTE -->
                 <div class="card p-6 rounded-2xl shadow-lg space-y-4">
                     <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
-                        <span>📍</span> Mission Route & Nearest Airports
+                        <span>📍</span> Mission Route & Verified Airports
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-400 mb-1">ORIGIN (City / Airport / Country)</label>
-                            <input type="text" id="origin" placeholder="e.g. Warsaw, Paris, Spain" value="Warsaw"
+                            <input type="text" id="origin" placeholder="e.g. Warsaw, Keflavik, Iceland" value="Warsaw"
                                 oninput="handleAirportSearch('origin')"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
                             <div id="origin-suggestions" class="suggest-box hidden"></div>
@@ -89,7 +89,7 @@
                         
                         <div class="relative">
                             <label class="block text-xs font-semibold text-slate-400 mb-1">DESTINATION (City / Airport / Country)</label>
-                            <input type="text" id="destination" placeholder="e.g. Berlin, New York, Egypt" value="Berlin"
+                            <input type="text" id="destination" placeholder="e.g. Berlin, Reykjavik, Spain" value="Berlin"
                                 oninput="handleAirportSearch('destination')"
                                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
                             <div id="destination-suggestions" class="suggest-box hidden"></div>
@@ -112,7 +112,7 @@
                     </div>
 
                     <div id="error-notice" class="hidden bg-red-500/10 border border-red-500/30 p-3 rounded-xl text-red-300 text-xs flex items-center gap-2">
-                        <span>⚠️</span> <span id="error-text">Could not locate specified location. Please check spelling.</span>
+                        <span>⚠️</span> <span id="error-text">Could not locate specified location. Please select a valid airport from the list.</span>
                     </div>
                 </div>
 
@@ -299,17 +299,30 @@
             }
 
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' airport')}&limit=4`);
-                const data = await response.json();
+                // Wyszukiwanie wyłącznie obiektów typu lotnisko z dookreślonym adresem
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&aeroway=aerodrome&addressdetails=1&limit=5`);
+                let data = await response.json();
+
+                // Awaryjne wyszukiwanie jeśli ścisłe zapytanie nic nie zwróciło
+                if (!data || data.length === 0) {
+                    const fallback = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' airport')}&addressdetails=1&limit=5`);
+                    data = await fallback.json();
+                }
 
                 if (data && data.length > 0) {
                     box.innerHTML = "";
                     data.forEach(item => {
+                        const fullName = item.display_name;
+                        const parts = fullName.split(',');
+                        const airportName = parts[0];
+                        const country = parts[parts.length - 1];
+
                         const div = document.createElement("div");
-                        div.className = "p-2.5 text-xs text-slate-200 hover:bg-blue-600/30 cursor-pointer border-b border-slate-800/50 flex justify-between items-center";
-                        div.innerHTML = `<span>🛫 ${item.display_name.split(',')[0]}</span> <span class="text-[10px] text-slate-400">${item.display_name.split(',').slice(-2).join(',')}</span>`;
+                        div.className = "p-3 text-xs text-slate-200 hover:bg-blue-600/30 cursor-pointer border-b border-slate-800/50 flex flex-col gap-0.5";
+                        div.innerHTML = `<span class="font-bold text-white">🛫 ${airportName}</span> <span class="text-[10px] text-slate-400">${parts.slice(1, -1).join(',')} — <strong class="text-blue-300">${country}</strong></span>`;
+                        
                         div.onclick = () => {
-                            input.value = item.display_name.split(',')[0];
+                            input.value = `${airportName} (${country.trim()})`;
                             coordsCache[inputId] = { lat: parseFloat(item.lat), lon: parseFloat(item.lon) };
                             box.classList.add("hidden");
                         };
@@ -376,7 +389,7 @@
 
             if (!loc1 || !loc2) {
                 document.getElementById("error-notice").classList.remove("hidden");
-                document.getElementById("error-text").innerText = "Could not geocode one or both locations. Please select a valid airport/city.";
+                document.getElementById("error-text").innerText = "Could not geocode one or both locations. Please select a valid airport from the list.";
                 btn.innerHTML = "<span>⚡</span> CALCULATE QUOTE";
                 btn.disabled = false;
                 return;
